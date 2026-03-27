@@ -18,22 +18,22 @@ OUTLET_BIAS = {
     "ndtv":             {"name": "NDTV",              "lean": "Moderate Left"},
     "indian express":   {"name": "Indian Express",   "lean": "Moderate Left"},
     "scroll.in":        {"name": "Scroll.in",         "lean": "Far Left"},
-    "the quint":        {"name": "The Quint",         "lean": "Far Left"},
+    "altnews":          {"name": "AltNews",           "lean": "Far Left"},
 }
 
-# ── RSS feeds (primary method) ────────────────────────────────────────────────
+# ── RSS feeds (primary) ───────────────────────────────────────────────────────
 RSS_FEEDS = {
     "opindia":        "https://feeds.feedburner.com/opindia",
     "swarajya":       "https://prod-qt-images.s3.amazonaws.com/production/swarajya/feed.xml",
     "times of india": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
     "the hindu":      "https://www.thehindu.com/feeder/default.rss",
-    "the print":      "https://theprint.in/feed/",
+    "the print":      "https://theprint.in/category/politics/feed/",
     "ndtv":           "https://feeds.feedburner.com/ndtvnews-top-stories",
     "scroll.in":      "https://feeds.feedburner.com/ScrollinArticles.rss",
-    "the quint":      "https://www.thequint.com/feed",
+    "altnews":        "https://www.altnews.in/feed/",
 }
 
-# ── NewsAPI fallback (only where RSS unavailable) ─────────────────────────────
+# ── NewsAPI (only where RSS unavailable) ──────────────────────────────────────
 NEWSAPI_DOMAINS = {
     "hindustan times": "hindustantimes.com",
     "indian express":  "indianexpress.com",
@@ -111,7 +111,6 @@ def fetch_all():
 
     df = pd.DataFrame(all_articles)
 
-    # clean up
     df = df[df["title"].str.len() > 0].reset_index(drop=True)
     df = df.drop_duplicates(subset=["title"]).reset_index(drop=True)
 
