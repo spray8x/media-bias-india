@@ -161,8 +161,123 @@ if view == "Overview":
     )
 
 elif view == "Topic Explorer":
-    st.subheader("Topic Explorer")
-    st.info("Coming soon")
+    st.subheader("🔍 Topic Explorer")
+    st.markdown("Search a keyword and see how different sides of the spectrum covered it.")
+
+    query = st.text_input("Enter a keyword", placeholder="e.g. Modi, inflation, Pakistan, election")
+
+    if query:
+        mask = (
+            df["title"].str.contains(query, case=False, na=False) |
+            df["description"].str.contains(query, case=False, na=False)
+        )
+        results = df[mask].copy()
+
+        if len(results) == 0:
+            st.warning(f"No articles found for '{query}'. Try a different keyword.")
+        else:
+            st.markdown(f"**{len(results)} articles found for '{query}'**")
+            st.markdown("---")
+
+            # ── Row 1: metrics ─────────────────────────────────────────────
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Articles Found", len(results))
+            col2.metric("Most Coverage From", results["lean"].value_counts().idxmax())
+            col3.metric("Avg Sentiment", round(results["sentiment_compound"].mean(), 3))
+
+            st.markdown("---")
+
+            # ── Row 2: volume and sentiment by lean ────────────────────────
+            lean_order = ["Far Right", "Moderate Right", "Centre", "Moderate Left", "Far Left"]
+            col_left, col_right = st.columns(2)
+
+            with col_left:
+                st.markdown("#### 📊 Coverage Volume by Lean")
+                vol = results["lean"].value_counts().reindex(lean_order).fillna(0).reset_index()
+                vol.columns = ["Lean", "Count"]
+                fig_vol = px.bar(
+                    vol, x="Lean", y="Count", color="Lean",
+                    color_discrete_map={
+                        "Far Right":      "#d62728",
+                        "Moderate Right": "#ff7f0e",
+                        "Centre":         "#7f7f7f",
+                        "Moderate Left":  "#1f77b4",
+                        "Far Left":       "#00008b",
+                    },
+                    template="plotly_dark",
+                )
+                fig_vol.update_layout(showlegend=False, margin=dict(t=20, b=20))
+                st.plotly_chart(fig_vol, use_container_width=True)
+
+            with col_right:
+                st.markdown("#### 🎭 Sentiment by Lean")
+                sent = (
+                    results.groupby("lean")["sentiment_compound"]
+                    .mean()
+                    .reindex(lean_order)
+                    .reset_index()
+                )
+                sent.columns = ["Lean", "Avg Compound Score"]
+                fig_sent = px.bar(
+                    sent, x="Lean", y="Avg Compound Score", color="Lean",
+                    color_discrete_map={
+                        "Far Right":      "#d62728",
+                        "Moderate Right": "#ff7f0e",
+                        "Centre":         "#7f7f7f",
+                        "Moderate Left":  "#1f77b4",
+                        "Far Left":       "#00008b",
+                    },
+                    template="plotly_dark",
+                )
+                fig_sent.update_layout(showlegend=False, margin=dict(t=20, b=20))
+                st.plotly_chart(fig_sent, use_container_width=True)
+
+            st.markdown("---")
+
+            # ── Row 3: side by side headline comparison ────────────────────
+            st.markdown("#### 📰 How Each Side Framed It")
+            left_leans  = ["Far Left", "Moderate Left"]
+            right_leans = ["Far Right", "Moderate Right"]
+
+            col_l, col_r = st.columns(2)
+
+            with col_l:
+                st.markdown("##### 🔵 Left Leaning")
+                left_articles = results[results["lean"].isin(left_leans)][
+                    ["outlet", "lean", "title", "sentiment_label", "url"]
+                ]
+                if len(left_articles) == 0:
+                    st.info("No left-leaning articles found for this topic.")
+                else:
+                    for _, row in left_articles.iterrows():
+                        sentiment_color = {"Positive": "🟢", "Negative": "🔴", "Neutral": "⚪"}.get(row["sentiment_label"], "⚪")
+                        st.markdown(f"{sentiment_color} **{row['outlet']}** — [{row['title']}]({row['url']})")
+
+            with col_r:
+                st.markdown("##### 🔴 Right Leaning")
+                right_articles = results[results["lean"].isin(right_leans)][
+                    ["outlet", "lean", "title", "sentiment_label", "url"]
+                ]
+                if len(right_articles) == 0:
+                    st.info("No right-leaning articles found for this topic.")
+                else:
+                    for _, row in right_articles.iterrows():
+                        sentiment_color = {"Positive": "🟢", "Negative": "🔴", "Neutral": "⚪"}.get(row["sentiment_label"], "⚪")
+                        st.markdown(f"{sentiment_color} **{row['outlet']}** — [{row['title']}]({row['url']})")
+
+            st.markdown("---")
+
+            # ── Row 4: centre coverage ─────────────────────────────────────
+            st.markdown("##### ⚪ Centre")
+            centre_articles = results[results["lean"] == "Centre"][
+                ["outlet", "title", "sentiment_label", "url"]
+            ]
+            if len(centre_articles) == 0:
+                st.info("No centre articles found for this topic.")
+            else:
+                for _, row in centre_articles.iterrows():
+                    sentiment_color = {"Positive": "🟢", "Negative": "🔴", "Neutral": "⚪"}.get(row["sentiment_label"], "⚪")
+                    st.markdown(f"{sentiment_color} **{row['outlet']}** — [{row['title']}]({row['url']})")
 
 elif view == "Outlet Profile":
     st.subheader("Outlet Profile")
